@@ -6,47 +6,54 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.GROQ_API_KEY;
 
   if (!apiKey) {
     return res.status(500).json({
-      content: [{ type: 'text', text: 'Error: GEMINI_API_KEY is not set in Vercel environment variables.' }]
+      content: [{ type: 'text', text: 'Error: GROQ_API_KEY is not set.' }]
     });
   }
 
   try {
     const { messages, system } = req.body;
 
-    const contents = messages.map(m => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }]
-    }));
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "llama3-8b-8192",
+        messages: [
+          {
+            role: "system",
+            content: system || "You are a helpful AI productivity coach."
+          },
+          ...messages
+        ],
+        temperature: 0.8,
+        max_tokens: 800
+      })
+    });
 
-    const geminiRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system_instruction: { parts: [{ text: system || 'You are a helpful assistant.' }] },
-          contents,
-          generationConfig: { temperature: 0.9, maxOutputTokens: 1000 }
-        })
-      }
-    );
-
-    const data = await geminiRes.json();
+    const data = await response.json();
 
     if (data.error) {
       return res.status(400).json({
-        content: [{ type: 'text', text: `Gemini Error: ${data.error.message}` }]
+        content: [{ type: 'text', text: `Groq Error: ${data.error.message}` }]
       });
     }
 
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
-    res.status(200).json({ content: [{ type: 'text', text }] });
+    const text = data.choices?.[0]?.message?.content || "No response received.";
+
+    res.status(200).json({
+      content: [{ type: 'text', text }]
+    });
 
   } catch (err) {
-    res.status(500).json({ content: [{ type: 'text', text: `Server error: ${err.message}` }] });
+    res.status(500).json({
+      content: [{ type: 'text', text: `Server error: ${err.message}` }]
+    });
   }
 }
