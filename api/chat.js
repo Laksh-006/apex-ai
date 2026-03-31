@@ -1,5 +1,4 @@
 export default async function handler(req, res) {
-  // CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -7,21 +6,47 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': process.env.ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify(req.body)
-    });
+  const apiKey = process.env.GEMINI_API_KEY;
 
-    const data = await response.json();
-    res.status(response.status).json(data);
+  if (!apiKey) {
+    return res.status(500).json({
+      content: [{ type: 'text', text: 'Error: GEMINI_API_KEY is not set in Vercel environment variables.' }]
+    });
+  }
+
+  try {
+    const { messages, system } = req.body;
+
+    const contents = messages.map(m => ({
+      role: m.role === 'assistant' ? 'model' : 'user',
+      parts: [{ text: m.content }]
+    }));
+
+    const geminiRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system_instruction: { parts: [{ text: system || 'You are a helpful assistant.' }] },
+          contents,
+          generationConfig: { temperature: 0.9, maxOutputTokens: 1000 }
+        })
+      }
+    );
+
+    const data = await geminiRes.json();
+
+    if (data.error) {
+      return res.status(400).json({
+        content: [{ type: 'text', text: `Gemini Error: ${data.error.message}` }]
+      });
+    }
+
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response received.';
+    res.status(200).json({ content: [{ type: 'text', text }] });
+
   } catch (err) {
-    console.error('Proxy error:', err);
-    res.status(500).json({ error: 'Internal server error' });
+    res.status(500).json({ content: [{ type: 'text', text: `Server error: ${err.message}` }] });
   }
 }
