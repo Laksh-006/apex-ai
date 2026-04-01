@@ -685,7 +685,7 @@
 
   // Check if already logged in
   if (localStorage.getItem('apex_logged_in') === 'true') {
-    window.location.href = 'index.html';
+    window.location.href = '/chat';
   }
 
   // ── Toggle password visibility ───────────────────────────────────
@@ -733,7 +733,7 @@
 
         btn.querySelector('.btn-text').textContent = '✓ Success!';
         setTimeout(() => {
-          window.location.href = 'index.html';
+          window.location.href = '/chat';
         }, 600);
       } else {
         btn.classList.remove('loading');
@@ -786,7 +786,7 @@
 
       btn.querySelector('.btn-text').textContent = '✓ Account created!';
       setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = '/chat';
       }, 600);
     }, 1000);
   }
