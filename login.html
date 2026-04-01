@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APEX — Login</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --surface2: #1a1a24;
+    --border: #2a2a3a;
+    --accent: #00e5ff;
+    --accent2: #7b2fff;
+    --accent3: #ff6b35;
+    --text: #e8e8f0;
+    --text-muted: #6b6b88;
+    --error: #ff4757;
+    --success: #00ff88;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Animated grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,229,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,229,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    animation: grid-drift 20s linear infinite;
+  }
+
+  @keyframes grid-drift {
+    from { background-position: 0 0; }
+    to { background-position: 40px 40px; }
+  }
+
+  /* Orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+    z-index: 0;
+    animation: drift 14s ease-in-out infinite alternate;
+  }
+  .orb-1 { width: 500px; height: 500px; background: rgba(123,47,255,0.1); top: -150px; right: -100px; }
+  .orb-2 { width: 350px; height: 350px; background: rgba(0,229,255,0.07); bottom: -100px; left: -80px; animation-delay: -7s; }
+  .orb-3 { width: 250px; height: 250px; background: rgba(255,107,53,0.05); top: 50%; left: 50%; animation-delay: -3s; }
+
+  @keyframes drift {
+    from { transform: translate(0,0) scale(1); }
+    to { transform: translate(40px, 30px) scale(1.08); }
+  }
+
+  /* SPLIT LAYOUT */
+  .page {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+  }
+
+  /* LEFT PANEL */
+  .left-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px;
+    border-right: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .left-panel::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0,229,255,0.03) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 60px;
+    animation: fade-up 0.6s ease both;
+  }
+
+  .brand-mark {
+    width: 46px; height: 46px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Space Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    color: #000;
+    box-shadow: 0 0 30px rgba(0,229,255,0.3);
+    flex-shrink: 0;
+  }
+
+  .brand-text { font-size: 24px; font-weight: 800; letter-spacing: 0.08em; }
+  .brand-sub { font-family: 'Space Mono', monospace; font-size: 10px; color: var(--accent); letter-spacing: 0.2em; text-transform: uppercase; }
+
+  .hero-title {
+    font-size: clamp(36px, 5vw, 56px);
+    font-weight: 800;
+    line-height: 1.1;
+    margin-bottom: 20px;
+    animation: fade-up 0.6s 0.1s ease both;
+  }
+
+  .hero-title span {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-desc {
+    font-size: 16px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    max-width: 380px;
+    margin-bottom: 48px;
+    animation: fade-up 0.6s 0.2s ease both;
+  }
+
+  /* Stats */
+  .stats {
+    display: flex;
+    gap: 32px;
+    animation: fade-up 0.6s 0.3s ease both;
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 4px; }
+
+  .stat-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  .stat-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  /* Floating cards */
+  .floating-cards {
+    position: absolute;
+    bottom: 40px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fade-up 0.6s 0.4s ease both;
+  }
+
+  .float-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 13px;
+    animation: float 4s ease-in-out infinite alternate;
+  }
+
+  .float-card:nth-child(2) { animation-delay: -2s; }
+
+  @keyframes float {
+    from { transform: translateY(0); }
+    to { transform: translateY(-6px); }
+  }
+
+  .float-icon {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+
+  .float-icon.cyan { background: rgba(0,229,255,0.1); }
+  .float-icon.purple { background: rgba(123,47,255,0.15); }
+
+  .float-text { font-size: 12px; }
+  .float-val { color: var(--accent); font-family: 'Space Mono', monospace; font-size: 11px; font-weight: 700; }
+  .float-sub { color: var(--text-muted); font-size: 11px; }
+
+  /* RIGHT PANEL — Login form */
+  .right-panel {
+    width: 480px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 60px 48px;
+    background: var(--surface);
+  }
+
+  .form-header {
+    margin-bottom: 36px;
+    animation: fade-up 0.6s 0.15s ease both;
+  }
+
+  .form-title { font-size: 28px; font-weight: 800; margin-bottom: 6px; }
+  .form-sub { font-size: 14px; color: var(--text-muted); }
+
+  /* Form */
+  .form { display: flex; flex-direction: column; gap: 18px; }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    animation: fade-up 0.5s ease both;
+  }
+
+  .field:nth-child(1) { animation-delay: 0.2s; }
+  .field:nth-child(2) { animation-delay: 0.25s; }
+
+  label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .input-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .input-icon {
+    position: absolute;
+    left: 14px;
+    color: var(--text-muted);
+    font-size: 15px;
+    pointer-events: none;
+    transition: color 0.2s;
+  }
+
+  input[type="email"],
+  input[type="password"],
+  input[type="text"] {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 13px 14px 13px 42px;
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  input:focus {
+    border-color: rgba(0,229,255,0.4);
+    box-shadow: 0 0 0 3px rgba(0,229,255,0.06);
+  }
+
+  input:focus + .input-icon,
+  .input-wrap:focus-within .input-icon { color: var(--accent); }
+
+  input::placeholder { color: var(--text-muted); }
+
+  .toggle-pass {
+    position: absolute;
+    right: 14px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    transition: color 0.2s;
+  }
+  .toggle-pass:hover { color: var(--text); }
+
+  /* Remember & forgot */
+  .form-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    animation: fade-up 0.5s 0.3s ease both;
+  }
+
+  .remember {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-muted);
+    user-select: none;
+  }
+
+  .remember input[type="checkbox"] { display: none; }
+
+  .checkmark {
+    width: 16px; height: 16px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.2s;
+    flex-shrink: 0;
+    font-size: 10px;
+  }
+
+  .remember input:checked ~ .checkmark {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #000;
+  }
+
+  .forgot {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+    transition: opacity 0.2s;
+  }
+  .forgot:hover { opacity: 0.7; }
+
+  /* Error message */
+  .error-msg {
+    display: none;
+    background: rgba(255,71,87,0.1);
+    border: 1px solid rgba(255,71,87,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--error);
+    animation: shake 0.4s ease;
+  }
+
+  .error-msg.show { display: block; }
+
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-6px); }
+    40% { transform: translateX(6px); }
+    60% { transform: translateX(-4px); }
+    80% { transform: translateX(4px); }
+  }
+
+  /* Submit button */
+  .submit-btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 10px;
+    color: #000;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: all 0.2s;
+    box-shadow: 0 0 24px rgba(0,229,255,0.25);
+    position: relative;
+    overflow: hidden;
+    animation: fade-up 0.5s 0.35s ease both;
+  }
+
+  .submit-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0);
+    transition: background 0.2s;
+  }
+
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 36px rgba(0,229,255,0.4);
+  }
+
+  .submit-btn:active { transform: translateY(0); }
+
+  .submit-btn.loading {
+    pointer-events: none;
+    opacity: 0.8;
+  }
+
+  .btn-content { display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+  .spinner {
+    display: none;
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+
+  .submit-btn.loading .spinner { display: block; }
+  .submit-btn.loading .btn-text { opacity: 0.7; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 12px;
+    animation: fade-up 0.5s 0.4s ease both;
+  }
+  .divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Sign up link */
+  .signup-link {
+    text-align: center;
+    font-size: 13px;
+    color: var(--text-muted);
+    animation: fade-up 0.5s 0.45s ease both;
+  }
+
+  .signup-link a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+  .signup-link a:hover { opacity: 0.7; }
+
+  /* Demo credentials hint */
+  .demo-hint {
+    background: rgba(0,229,255,0.05);
+    border: 1px solid rgba(0,229,255,0.15);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.7;
+    animation: fade-up 0.5s 0.5s ease both;
+  }
+
+  .demo-hint strong { color: var(--accent); }
+
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(18px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* SIGNUP FORM (hidden by default) */
+  .signup-form { display: none; }
+  .signup-form.active { display: flex; flex-direction: column; gap: 18px; }
+  .login-form.hidden { display: none; }
+
+  /* Mobile */
+  @media (max-width: 900px) {
+    .left-panel { display: none; }
+    .right-panel { width: 100%; padding: 40px 28px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div class="page">
+
+  <!-- LEFT PANEL -->
+  <div class="left-panel">
+    <div class="brand">
+      <div class="brand-mark">APX</div>
+      <div>
+        <div class="brand-text">APEX</div>
+        <div class="brand-sub">Productivity Intelligence</div>
+      </div>
+    </div>
+
+    <h1 class="hero-title">
+      Unlock your<br>
+      <span>peak performance</span><br>
+      with AI coaching.
+    </h1>
+
+    <p class="hero-desc">
+      APEX analyzes your productivity patterns and delivers personalized coaching to help you enter flow states faster and consistently hit your goals.
+    </p>
+
+    <div class="stats">
+      <div class="stat">
+        <span class="stat-value">3.2×</span>
+        <span class="stat-label">Productivity boost</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">87%</span>
+        <span class="stat-label">Focus improvement</span>
+      </div>
+      <div class="stat">
+        <span class="stat-value">12k+</span>
+        <span class="stat-label">Active users</span>
+      </div>
+    </div>
+
+    <div class="floating-cards">
+      <div class="float-card">
+        <div class="float-icon cyan">⚡</div>
+        <div class="float-text">
+          <div class="float-val">Focus Score: 94</div>
+          <div class="float-sub">Your best session this week</div>
+        </div>
+      </div>
+      <div class="float-card">
+        <div class="float-icon purple">🎯</div>
+        <div class="float-text">
+          <div class="float-val">7-day streak 🔥</div>
+          <div class="float-sub">Keep the momentum going</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel">
+
+    <!-- LOGIN FORM -->
+    <div id="login-section">
+      <div class="form-header">
+        <h2 class="form-title">Welcome back</h2>
+        <p class="form-sub">Sign in to continue to APEX</p>
+      </div>
+
+      <div class="form login-form" id="login-form">
+        <div class="field">
+          <label for="email">Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input type="email" id="email" placeholder="you@example.com" autocomplete="email"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="password" placeholder="Enter your password" autocomplete="current-password"/>
+            <button class="toggle-pass" onclick="togglePassword()" type="button" id="toggle-btn">👁</button>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="remember">
+            <input type="checkbox" id="remember">
+            <span class="checkmark">✓</span>
+            Remember me
+          </label>
+          <a href="#" class="forgot">Forgot password?</a>
+        </div>
+
+        <div class="error-msg" id="error-msg">⚠️ Invalid email or password. Please try again.</div>
+
+        <button class="submit-btn" onclick="handleLogin()" id="login-btn">
+          <div class="btn-content">
+            <div class="spinner"></div>
+            <span class="btn-text">Sign In to APEX</span>
+          </div>
+        </button>
+
+        <div class="divider">or</div>
+
+
+
+        <div class="signup-link">
+          Don't have an account? <a href="#" onclick="showSignup()">Create one free</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIGNUP FORM -->
+    <div id="signup-section" style="display:none;">
+      <div class="form-header">
+        <h2 class="form-title">Create account</h2>
+        <p class="form-sub">Start your productivity journey</p>
+      </div>
+
+      <div class="form signup-form active" id="signup-form">
+        <div class="field">
+          <label>Full name</label>
+          <div class="input-wrap">
+            <span class="input-icon">👤</span>
+            <input type="text" id="signup-name" placeholder="Your full name"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉</span>
+            <input type="email" id="signup-email" placeholder="you@example.com"/>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input type="password" id="signup-password" placeholder="Min. 8 characters"/>
+          </div>
+        </div>
+
+        <div class="error-msg" id="signup-error"></div>
+
+        <button class="submit-btn" onclick="handleSignup()" id="signup-btn">
+          <div class="btn-content">
+            <div class="spinner"></div>
+            <span class="btn-text">Create Account</span>
+          </div>
+        </button>
+
+        <div class="signup-link">
+          Already have an account? <a href="#" onclick="showLogin()">Sign in</a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // ── Simple localStorage-based auth ──────────────────────────────
+  // In production replace this with a real backend / Firebase / Supabase
+
+  function getUsers() {
+    return JSON.parse(localStorage.getItem('apex_users') || '{}');
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem('apex_users', JSON.stringify(users));
+  }
+
+  // Seed demo account
+  const users = getUsers();
+  if (!users['lakshay@lpu.in']) {
+    users['lakshay@lpu.in'] = { name: 'Lakshay', password: 'laksh@123' };
+    saveUsers(users);
+  }
+
+  // Check if already logged in
+  if (localStorage.getItem('apex_logged_in') === 'true') {
+    window.location.href = 'index.html';
+  }
+
+  // ── Toggle password visibility ───────────────────────────────────
+  function togglePassword() {
+    const input = document.getElementById('password');
+    const btn = document.getElementById('toggle-btn');
+    if (input.type === 'password') {
+      input.type = 'text';
+      btn.textContent = '🙈';
+    } else {
+      input.type = 'password';
+      btn.textContent = '👁';
+    }
+  }
+
+  // ── Handle Login ─────────────────────────────────────────────────
+  function handleLogin() {
+    const email = document.getElementById('email').value.trim().toLowerCase();
+    const password = document.getElementById('password').value;
+    const remember = document.getElementById('remember').checked;
+    const errorEl = document.getElementById('error-msg');
+    const btn = document.getElementById('login-btn');
+
+    errorEl.classList.remove('show');
+
+    if (!email || !password) {
+      errorEl.textContent = '⚠️ Please fill in all fields.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    // Loading state
+    btn.classList.add('loading');
+    btn.querySelector('.btn-text').textContent = 'Signing in...';
+
+    setTimeout(() => {
+      const users = getUsers();
+
+      if (users[email] && users[email].password === password) {
+        // Success
+        localStorage.setItem('apex_logged_in', 'true');
+        localStorage.setItem('apex_user_email', email);
+        localStorage.setItem('apex_user_name', users[email].name || email);
+        if (remember) localStorage.setItem('apex_remember', 'true');
+
+        btn.querySelector('.btn-text').textContent = '✓ Success!';
+        setTimeout(() => {
+          window.location.href = 'index.html';
+        }, 600);
+      } else {
+        btn.classList.remove('loading');
+        btn.querySelector('.btn-text').textContent = 'Sign In to APEX';
+        errorEl.textContent = '⚠️ Invalid email or password. Please try again.';
+        errorEl.classList.add('show');
+      }
+    }, 1000);
+  }
+
+  // ── Handle Signup ────────────────────────────────────────────────
+  function handleSignup() {
+    const name = document.getElementById('signup-name').value.trim();
+    const email = document.getElementById('signup-email').value.trim().toLowerCase();
+    const password = document.getElementById('signup-password').value;
+    const errorEl = document.getElementById('signup-error');
+    const btn = document.getElementById('signup-btn');
+
+    errorEl.classList.remove('show');
+
+    if (!name || !email || !password) {
+      errorEl.textContent = '⚠️ Please fill in all fields.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    if (password.length < 8) {
+      errorEl.textContent = '⚠️ Password must be at least 8 characters.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    const users = getUsers();
+    if (users[email]) {
+      errorEl.textContent = '⚠️ An account with this email already exists.';
+      errorEl.classList.add('show');
+      return;
+    }
+
+    btn.classList.add('loading');
+    btn.querySelector('.btn-text').textContent = 'Creating account...';
+
+    setTimeout(() => {
+      users[email] = { name, password };
+      saveUsers(users);
+
+      localStorage.setItem('apex_logged_in', 'true');
+      localStorage.setItem('apex_user_email', email);
+      localStorage.setItem('apex_user_name', name);
+
+      btn.querySelector('.btn-text').textContent = '✓ Account created!';
+      setTimeout(() => {
+        window.location.href = 'index.html';
+      }, 600);
+    }, 1000);
+  }
+
+  // ── Toggle forms ─────────────────────────────────────────────────
+  function showSignup() {
+    document.getElementById('login-section').style.display = 'none';
+    document.getElementById('signup-section').style.display = 'block';
+  }
+
+  function showLogin() {
+    document.getElementById('signup-section').style.display = 'none';
+    document.getElementById('login-section').style.display = 'block';
+  }
+
+  // ── Enter key support ────────────────────────────────────────────
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      if (document.getElementById('login-section').style.display !== 'none') {
+        handleLogin();
+      } else {
+        handleSignup();
+      }
+    }
+  });
+</script>
+</body>
+</html>
