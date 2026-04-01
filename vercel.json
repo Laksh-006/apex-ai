@@ -8,6 +8,8 @@
     { "src": "/api/chat", "dest": "/api/chat.js" },
     { "src": "/", "dest": "/login.html" },
     { "src": "/chat", "dest": "/index.html" },
+    { "src": "/login", "dest": "/login.html" },
+    { "src": "/(.*)\\.html", "dest": "/$1" },
     { "src": "/(.*)", "dest": "/$1" }
   ]
 }
