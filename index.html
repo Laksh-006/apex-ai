@@ -616,12 +616,13 @@ async function send(){
     const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({messages:history,system:SP})});
     const data=await r.json();
     rmTyping();
-    const reply=data.content?.[0]?.text||'⚠️ AI not responding. Try again.';
+    if(data.error){rmTyping();addMsg('b','⚠️ API Error: '+data.error.message);isTyping=false;return;}
+    const reply=data.content?.[0]?.text||'⚠️ No response from AI. Try again.';
     history.push({role:'assistant',content:reply});
     addMsg('b',reply);
     updateFocusScore();
     saveChat();
-  }catch(e){rmTyping();addMsg('b','⚠️ Connection error. Please try again.');}
+  }catch(e){rmTyping();addMsg('b','⚠️ Connection error: '+e.message+'. Check your GEMINI_API_KEY in Vercel → Settings → Environment Variables.');}
   typing=false;
 }
 </script>
