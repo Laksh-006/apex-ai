@@ -84,11 +84,17 @@ function speakMsg(msgId){
   const el=document.getElementById(msgId);
   const btn=document.getElementById('spk-'+msgId);
   if(!el||!btn)return;
-  if(synth.speaking){synth.cancel();btn.textContent='🔊 Read aloud';btn.classList.remove('speaking');return;}
+  if(synth.speaking){synth.cancel();document.querySelectorAll('.speak-btn').forEach(b=>{b.textContent='🔊 Read aloud';b.classList.remove('speaking');});return;}
+  document.querySelectorAll('.speak-btn').forEach(b=>{b.textContent='🔊 Read aloud';b.classList.remove('speaking');});
   btn.textContent='⏹ Stop';btn.classList.add('speaking');
-  const text=el.innerText||el.textContent;
-  speakText(text);
-  currentUtter.onend=()=>{btn.textContent='🔊 Read aloud';btn.classList.remove('speaking');};
+  const text=(el.innerText||el.textContent).substring(0,2000);
+  const utt=new SpeechSynthesisUtterance(text);
+  if(selectedVoice)utt.voice=selectedVoice;
+  utt.rate=ttsSpeed;utt.pitch=1;utt.volume=1;
+  utt.onend=()=>{btn.textContent='🔊 Read aloud';btn.classList.remove('speaking');};
+  utt.onerror=()=>{btn.textContent='🔊 Read aloud';btn.classList.remove('speaking');};
+  synth.cancel();
+  synth.speak(utt);
 }
 
 // init voice on load
@@ -709,7 +715,7 @@ function addMsg(role,content,anim=true){
   d.className=`msg ${role}`;
   if(!anim)d.style.animationDuration='0s';
   const t=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
-  if(role==='b')d.innerHTML=`<div class="mav">APX</div><div class="mbody"><div class="mmeta">APEX · ${t}</div><div class="bub">${fmt(content)}</div></div>`;
+  if(role==='b'){const mid='m'+Date.now()+Math.random().toString(36).slice(2,6);d.innerHTML=`<div class="mav">APX</div><div class="mbody"><div class="mmeta">APEX · ${t}</div><div class="bub" id="${mid}">${fmt(content)}</div><button class="speak-btn" id="spk-${mid}" onclick="speakMsg('${mid}')">🔊 Read aloud</button></div>`;}
   else d.innerHTML=`<div class="mav">👤</div><div class="mbody"><div class="mmeta">${t} · You</div><div class="bub">${esc(content)}</div></div>`;
   c.appendChild(d);setTimeout(()=>{c.scrollTop=c.scrollHeight;},50);
   return d;
