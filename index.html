@@ -484,7 +484,7 @@ let history=[], typing=false, sid=null, tfilter='all';
 
 // AUTH
 window.addEventListener('load',()=>{
-  if(localStorage.getItem('apex_logged')!=='true'){window.location.href='/login';return;}
+  if(localStorage.getItem('apex_logged_in')!=='true'){window.location.href='/login';return;}
   const name=localStorage.getItem('apex_uname')||'User';
   const first=name.split(' ')[0].toUpperCase();
   document.getElementById('uname').textContent=first;
@@ -493,7 +493,7 @@ window.addEventListener('load',()=>{
   requestNotifPerm();
 });
 
-function logout(){saveChat();localStorage.removeItem('apex_logged');localStorage.removeItem('apex_uemail');localStorage.removeItem('apex_uname');window.location.href='/login';}
+function logout(){saveChat();localStorage.removeItem('apex_logged_in');localStorage.removeItem('apex_uemail');localStorage.removeItem('apex_uname');window.location.href='/login';}
 function requestNotifPerm(){if('Notification' in window && Notification.permission==='default') Notification.requestPermission();}
 
 // SIDEBAR TABS
